@@ -1,9 +1,8 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronRight, Menu, X, CheckCircle2, Award, Sparkles, BookOpen, PenTool, Moon, Mail, Map, ExternalLink, Shield, MessageCircle } from 'lucide-react';
+import { ChevronRight, Menu, X, CheckCircle2, Award, Sparkles, BookOpen, PenTool, Moon, Mail, Map, ExternalLink, Shield, MessageCircle, Quote } from 'lucide-react';
 
 // 【重要】源明先生のLINE公式アカウントURL
-// lin.ee 形式の短縮URLをお持ちの場合は、こちらを差し替えるとより安定します
 const BOOKING_URL = "https://line.me/R/ti/p/@677wjewg";
 // アルファポリス受賞結果ページURL
 const AWARD_URL = "https://www.alphapolis.co.jp/prize/result/663000178";
@@ -13,8 +12,9 @@ const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showFloatingButton, setShowFloatingButton] = useState(false);
   const [isPriceVisible, setIsPriceVisible] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // モーダル管理用
 
-  // 1. 星の座標を固定（再レンダリングによる瞬間移動を防止）
+  // 1. 星の座標を固定
   const starsFar = useMemo(() => (
     [...Array(20)].map(() => ({
       top: Math.random() * 100,
@@ -30,25 +30,23 @@ const App = () => {
     }))
   ), []);
 
-  // 2. モバイルメニュー開閉時のスクロールロック
+  // 2. モバイルメニュー・モーダル開閉時のスクロールロック
   useEffect(() => {
-    if (isMenuOpen) {
+    if (isMenuOpen || activeModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [isMenuOpen]);
+  }, [isMenuOpen, activeModal]);
 
-  // 3. 追従ボタンの表示ロジック統合（IntersectionObserver）
+  // 3. 追従ボタンの表示ロジック
   useEffect(() => {
     const el = document.getElementById('price');
     if (!el) return;
-
     const io = new IntersectionObserver(([entry]) => {
       setIsPriceVisible(entry.isIntersecting);
     }, { threshold: 0.1 });
-
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -71,6 +69,33 @@ const App = () => {
 
   const currentCard = cards.find(c => c.id === selectedCard);
 
+  // 法的ページのコンテンツデータ
+  const legalContent = {
+    terms: {
+      title: "利用規約",
+      body: `本規約は、源明（以下「当方」）が提供する占いおよび執筆サービス（以下「本サービス」）の利用条件を定めるものです。
+      1. サービスの性質：本サービスは娯楽およびカウンセリングを目的としたものであり、将来の出来事の的中を保証するものではありません。
+      2. 禁止事項：鑑定結果の公序良俗に反する利用、SNS等への全文転載、当方への誹謗中傷を禁止します。
+      3. 免責事項：本サービスの利用により生じた直接的、間接的損害について、当方は一切の責任を負いません。`
+    },
+    privacy: {
+      title: "個人情報保護方針",
+      body: `当方は、お客様の個人情報を適切に管理いたします。
+      1. 利用目的：鑑定サービスの提供、およびお問い合わせへの回答のみに利用します。
+      2. 第三者提供：法令に基づく場合を除き、同意なく第三者に個人情報を提供することはありません。
+      3. 管理：ご提供いただいた情報は源明が責任を持って厳重に管理し、漏洩防止に努めます。鑑定終了後、不要となった情報は適切に破棄いたします。`
+    },
+    law: {
+      title: "特定商取引法に基づく表記",
+      body: `■販売事業者：源明
+      ■役務の内容：占い鑑定、物語形式の鑑定書執筆
+      ■代金の支払時期：鑑定予約前または鑑定終了後の規定の期間内
+      ■代金の支払方法：銀行振込、各種キャッシュレス決済（LINE連携先に準ずる）
+      ■返品・キャンセル：サービスの性質上、鑑定・執筆開始後の返金には応じられません。
+      ■お問い合わせ：公式LINEチャットより受け付けております。`
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0d0c0a] text-[#e5e1da] font-sans selection:bg-amber-700/30 overflow-x-hidden">
       
@@ -89,18 +114,8 @@ const App = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <a 
-              href={BOOKING_URL} 
-              rel="noopener noreferrer"
-              className="hidden sm:inline-flex bg-amber-200 hover:bg-white text-[#0d0c0a] font-bold py-2 px-6 rounded-full text-xs transition shadow-lg shadow-amber-200/10 active:scale-95"
-            >
-              無料で相手の本音を知る
-            </a>
-            <button 
-              className="md:hidden p-2 text-amber-200 relative z-[110]"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="メニュー開閉"
-            >
+            <a href={BOOKING_URL} rel="noopener noreferrer" className="hidden sm:inline-flex bg-amber-200 hover:bg-white text-[#0d0c0a] font-bold py-2 px-6 rounded-full text-xs transition shadow-lg shadow-amber-200/10 active:scale-95">無料で相手の本音を知る</a>
+            <button className="md:hidden p-2 text-amber-200 relative z-[110]" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="メニュー開閉">
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
@@ -111,13 +126,11 @@ const App = () => {
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] md:hidden" onClick={() => setIsMenuOpen(false)} />
         )}
         <div className={`fixed inset-y-0 right-0 w-[75%] bg-[#1a1814] z-[105] shadow-2xl transition-transform duration-300 md:hidden ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-          <div className="flex flex-col p-10 pt-24 space-y-8 text-lg font-serif text-center">
+          <div className="flex flex-col p-10 pt-24 space-y-8 text-lg font-serif text-center text-shadow-sm">
             <a href="#about" onClick={() => setIsMenuOpen(false)} className="border-b border-white/5 pb-4 text-white">占術と物語</a>
-            <a href="#voice" onClick={() => setIsMenuOpen(false)} className="border-b border-white/5 pb-4 text-white">読者の声</a>
+            <a href="#voice" onClick={() => setIsMenuOpen(false)} className="border-b border-white/5 pb-4 text-amber-200 font-bold">読者の声</a>
             <a href="#faq" onClick={() => setIsMenuOpen(false)} className="border-b border-white/5 pb-4 text-white">よくある質問</a>
-            <a href={BOOKING_URL} rel="noopener noreferrer" className="bg-[#06C755] text-white text-center font-bold py-4 rounded-full mt-4 text-base shadow-xl active:scale-95 transition">
-              無料で相手の本音を知る
-            </a>
+            <a href={BOOKING_URL} rel="noopener noreferrer" className="bg-[#06C755] text-white text-center font-bold py-4 rounded-full mt-4 text-base shadow-xl active:scale-95 transition">無料で相手の本音を知る</a>
           </div>
         </div>
       </nav>
@@ -127,13 +140,11 @@ const App = () => {
         <div className="absolute inset-0 pointer-events-none z-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#1b1a18_0%,_#0d0c0a_45%,_#0a0a0c_100%)]"></div>
           <div className="absolute inset-0 opacity-20 bg-gradient-to-tr from-purple-900/10 via-amber-900/5 to-transparent blur-[80px] animate-nebula-drift"></div>
-          
           <div className="absolute inset-0 animate-space-drift-slow opacity-30">
             {starsFar.map((s, i) => (
               <div key={i} className="absolute bg-white rounded-full" style={{ top: `${s.top}%`, left: `${s.left}%`, width: '1px', height: '1px', boxShadow: '0 0 2px #fff' }} />
             ))}
           </div>
-
           <div className="absolute inset-0 animate-space-drift-medium opacity-50">
             {starsNear.map((s, i) => (
               <div key={i} className="absolute bg-amber-200/40 rounded-full animate-twinkle" style={{ top: `${s.top}%`, left: `${s.left}%`, width: '2px', height: '2px', animationDelay: `${s.delay}s` }} />
@@ -142,7 +153,7 @@ const App = () => {
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-block py-1 px-5 rounded-full border border-amber-500/50 text-amber-200 text-[10px] tracking-[0.3em] mb-8 bg-amber-500/10 backdrop-blur-sm font-bold">
+          <div className="inline-block py-1 px-5 rounded-full border border-amber-500/50 text-amber-200 text-[10px] tracking-[0.3em] mb-8 bg-amber-500/10 backdrop-blur-sm font-bold shadow-[0_0_15px_rgba(251,191,36,0.2)]">
             アルファポリス第15回ファンタジー小説大賞 奨励賞受賞(最終23位) ※1
           </div>
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif leading-[1.3] md:leading-[1.4] mb-10 text-white tracking-tight text-shadow-glow">
@@ -154,8 +165,9 @@ const App = () => {
             作家・源明が算命学とタロットで、あなただけの鑑定書を認めます。
           </p>
           
+          {/* 【視認性大幅改善】カード選択エリア */}
           <div className="bg-white/[0.04] border border-amber-900/40 p-6 md:p-12 rounded-lg shadow-2xl max-w-2xl mx-auto backdrop-blur-md relative overflow-hidden">
-            <p className="text-amber-100 text-xs mb-10 tracking-[0.2em] font-bold uppercase leading-relaxed text-shadow-sm">
+            <p className="text-amber-100 text-[11px] md:text-xs mb-10 tracking-[0.2em] font-bold uppercase leading-relaxed text-shadow-sm">
               【一頁の託宣】扉を開き、物語の欠片を受け取ってください
             </p>
             <div className="grid grid-cols-3 gap-3 md:gap-8">
@@ -165,23 +177,15 @@ const App = () => {
                   onClick={() => setSelectedCard(card.id)}
                   className={`group relative aspect-[2/3] rounded-sm transition-all duration-700 transform active:scale-95 border
                     ${selectedCard === card.id 
-                      ? 'scale-105 border-amber-400/80 shadow-[0_0_40px_rgba(251,191,36,0.4)] bg-amber-900/40' 
+                      ? 'scale-105 border-amber-400/80 shadow-[0_0_40px_rgba(251,191,36,0.4)] bg-amber-900/30' 
                       : 'border-white/20 bg-white/[0.1] hover:bg-white/[0.15] hover:border-amber-500/50 shadow-[0_10px_30px_rgba(0,0,0,0.6)]'
                     }`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/60 pointer-events-none" />
-                  
                   <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center relative z-10">
-                    <BookOpen 
-                      size={24} 
-                      className={`${selectedCard === card.id ? 'text-amber-300' : 'text-amber-200'} mb-3 md:mb-5 transition-colors group-hover:text-white`} 
-                    />
-                    <span className="text-[10px] md:text-xs font-serif font-bold tracking-widest text-white leading-tight mb-2">
-                      {card.name}
-                    </span>
-                    <span className="text-[8px] md:text-[9px] text-gray-100 font-serif opacity-90 italic">
-                      ({card.meaning})
-                    </span>
+                    <BookOpen size={24} className={`${selectedCard === card.id ? 'text-amber-300' : 'text-amber-200'} mb-3 md:mb-5 transition-colors group-hover:text-white`} />
+                    <span className="text-[10px] md:text-xs font-serif font-bold tracking-widest text-white leading-tight mb-2">{card.name}</span>
+                    <span className="text-[8px] md:text-[9px] text-gray-100 font-serif opacity-90 italic">({card.meaning})</span>
                   </div>
                 </button>
               ))}
@@ -190,49 +194,18 @@ const App = () => {
             {selectedCard && (
               <div className="mt-10 animate-fade-in text-center space-y-8">
                 <div className="relative p-6 border-l-2 border-amber-400/50 bg-white/5 text-left">
-                  <p className="text-white text-sm md:text-base leading-relaxed font-serif italic text-shadow-sm">
-                    「{currentCard.hint}」
-                  </p>
+                  <p className="text-white text-sm md:text-base leading-relaxed font-serif italic text-shadow-sm">「{currentCard.hint}」</p>
                 </div>
                 <div className="space-y-4">
-                    <a 
-                      href={BOOKING_URL}
-                      rel="noopener noreferrer"
-                      className="group w-full inline-flex items-center justify-center bg-[#06C755] text-white font-bold py-5 px-10 rounded-full text-lg shadow-[0_10px_30px_rgba(6,199,85,0.3)] transition-all transform hover:scale-[1.02] active:scale-95"
-                    >
-                      <MessageCircle size={24} className="mr-2 fill-current" />
-                      無料で相手の本音を知る
-                      <ChevronRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
-                    </a>
-                    <p className="text-[10px] text-gray-300 tracking-widest italic font-bold">
-                      ※ボタンを押すとLINEアプリが起動します
-                    </p>
+                  <a href={BOOKING_URL} rel="noopener noreferrer" className="group w-full inline-flex items-center justify-center bg-[#06C755] text-white font-bold py-5 px-10 rounded-full text-lg shadow-[0_10px_30px_rgba(6,199,85,0.3)] transition-all transform hover:scale-[1.02] active:scale-95">
+                    <MessageCircle size={24} className="mr-2 fill-current" />
+                    無料で相手の本音を知る
+                    <ChevronRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                  </a>
+                  <p className="text-[10px] text-gray-300 tracking-widest italic font-bold">※ボタンを押すとLINEアプリが起動します</p>
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* LINE Flow Section */}
-      <section className="py-20 bg-[#1a1814] border-y border-amber-900/20">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-2xl md:text-3xl font-serif mb-4 text-amber-100 font-bold">鑑定結果を受け取るまでの流れ</h2>
-            <div className="w-12 h-0.5 bg-amber-500 mx-auto opacity-50"></div>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8 text-center font-serif">
-            {[
-              { step: "01", title: "公式LINEを登録", desc: "ボタンを押してLINEを開き、源明を友だち追加してください。" },
-              { step: "02", title: "鑑定希望と送信", desc: "トーク画面で「鑑定希望」と一言送るか、メニューから希望項目を選びます。" },
-              { step: "03", title: "物語鑑定書が届く", desc: "源明があなたの宿命と現状を読み解き、あなただけの物語を直接届けます。" }
-            ].map((item, i) => (
-              <div key={i} className="relative p-8 bg-white/[0.03] border border-white/10 rounded-xl group hover:border-amber-500/30 transition shadow-lg">
-                <span className="text-4xl font-bold text-amber-500/20 absolute top-4 left-6 italic">{item.step}</span>
-                <h3 className="text-lg font-bold text-amber-100 mb-4 relative z-10">{item.title}</h3>
-                <p className="text-xs text-gray-300 leading-relaxed relative z-10">{item.desc}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -248,19 +221,11 @@ const App = () => {
                  <h3 className="text-3xl font-serif text-white tracking-[0.3em] mb-2 text-shadow-glow">源明</h3>
                  <p className="text-[10px] text-amber-200/70 tracking-[0.4em] uppercase mb-8 italic border-b border-white/5 pb-4">Author & Storyteller</p>
                  <div className="space-y-4 text-[11px] text-gray-200 font-serif leading-loose">
-                   <p className="text-amber-100">アルファポリス 第15回<br/>ファンタジー小説大賞 奨励賞受賞 ※1</p>
-                   <a 
-                    href={AWARD_URL} 
-                    target="_blank" 
-                    rel="noopener noreferrer nofollow" 
-                    aria-label="アルファポリス公式結果発表ページを新しいタブで開く" 
-                    className="inline-flex items-center gap-1 text-[9px] text-amber-400 font-bold hover:underline"
-                   >
-                    公式発表はこちら <ExternalLink size={10} />
-                   </a>
-                   <p className="border-t border-white/5 pt-4 text-gray-400 italic font-bold">(旧名義：村雨勇として受賞)</p>
+                   <p className="text-amber-100 font-bold">アルファポリス 第15回<br/>ファンタジー小説大賞 奨励賞受賞 ※1</p>
+                   <a href={AWARD_URL} target="_blank" rel="noopener noreferrer nofollow" aria-label="アルファポリス公式結果発表ページを新しいタブで開く" className="inline-flex items-center gap-1 text-[9px] text-amber-400 font-bold hover:underline">公式発表はこちら <ExternalLink size={10} /></a>
+                   <p className="border-t border-white/5 pt-4 text-gray-500 italic font-bold">(旧名義：村雨勇として受賞)</p>
                    <p className="border-t border-white/5 pt-4 text-xs font-bold text-amber-100 text-[12px]">算命学 / タロット / 運命の色譜 / 手相</p>
-                   <p className="text-gray-300">恋愛という物語を読み解き、<br/>魂の声を言葉に変える専門家。</p>
+                   <p className="text-gray-300">恋愛という物語を読み解き、魂の声を言葉に変える専門家。</p>
                  </div>
               </div>
             </div>
@@ -275,20 +240,30 @@ const App = () => {
         </div>
       </section>
 
-      {/* Voice Section */}
-      <section id="voice" className="py-24 bg-[#14120f] border-y border-amber-900/20">
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-4xl font-serif mb-4 text-amber-100 font-bold">読者の声</h2>
-          <div className="w-12 h-0.5 bg-amber-500 mx-auto opacity-50 mb-16"></div>
-          <div className="grid md:grid-cols-2 gap-8 text-left">
+      {/* 【制作】Voice Section - ブランドを証明する感想文 */}
+      <section id="voice" className="py-24 bg-[#14120f] border-y border-amber-900/20 relative">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-20">
+            <Quote size={40} className="text-amber-500/20 mx-auto mb-4" />
+            <h2 className="text-2xl md:text-4xl font-serif text-amber-100 font-bold tracking-widest text-shadow-glow">読者の声</h2>
+            <p className="text-xs text-gray-400 font-serif tracking-[0.2em] mt-4 uppercase">Testimonials</p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { tag: "復縁", age: "31歳・読者", text: "鑑定書を読んだ瞬間、これまでの苦しみがすべて意味のある『伏線』だったのだと気づかされ、涙が止まりませんでした。自分を愛せるようになった頃、彼から自然と連絡が届きました。" },
-              { tag: "本音", age: "28歳・読者", text: "彼の冷たい態度の裏にある、あまりに不器用な物語を源明先生に綴っていただきました。その夜、不思議と心が凪いで、彼を許すことができました。今は穏やかな関係に戻れています。" }
+              { tag: "片思い", title: "Chapter: 臆病な本音", text: "「鑑定書を読み、彼が実は私以上に自信を失っている物語を知りました。アドバイス通り一言送ったら、彼から『ずっと待ってた』と返信が。物語は、まだ続いていました。」", author: "31歳・読者" },
+              { tag: "曖昧な関係", title: "Chapter: 二人の叙事詩", text: "「都合のいい存在なのか不安でした。綴られた彼の不器用な本音。自分の人生を肯定してもらえたことで、自分に自信が持て、今は彼と正式にお付き合いしています。」", author: "28歳・読者" },
+              { tag: "復縁", title: "Chapter: 伏線回収", text: "「別れの理由は先生の言う通り『未来への伏線』でした。鑑定書の言葉をお守りにして過ごした3ヶ月後、信じられない形で彼と再会。魔法のような言葉に救われました。」", author: "35歳・読者" }
             ].map((v, i) => (
-              <div key={i} className="bg-[#0d0c0a] p-10 border border-amber-900/10 italic font-serif relative shadow-xl">
-                <span className="absolute -top-3 left-8 bg-[#3d3a33] text-amber-200 text-[10px] px-3 py-1 tracking-widest uppercase shadow-lg font-bold">Chapter: {v.tag}</span>
-                <p className="text-gray-300 text-sm md:text-base leading-[2.2] mb-6 italic">「{v.text}」</p>
-                <div className="text-[10px] text-amber-600 tracking-[0.2em] font-bold not-italic">— {v.age} ※個人の感想です</div>
+              <div key={i} className="group relative bg-[#0d0c0a] p-10 border border-white/5 rounded-sm hover:border-amber-500/40 transition duration-500 shadow-2xl flex flex-col justify-between">
+                <div className="absolute top-0 left-8 -translate-y-1/2 bg-amber-500 text-[#0d0c0a] text-[9px] font-bold px-3 py-1 tracking-widest uppercase rounded-sm z-10 shadow-lg">{v.tag}</div>
+                <div>
+                  <h4 className="text-amber-200 font-serif text-sm mb-6 pb-4 border-b border-white/10">{v.title}</h4>
+                  <p className="text-gray-300 text-sm leading-[2.2] font-serif italic italic text-shadow-sm">「{v.text}」</p>
+                </div>
+                <div className="mt-10 flex items-center justify-between border-t border-white/5 pt-6">
+                  <span className="text-[10px] text-amber-600/80 tracking-[0.2em] font-bold">— {v.author}</span>
+                  <Sparkles size={14} className="text-amber-500/20" />
+                </div>
               </div>
             ))}
           </div>
@@ -299,23 +274,17 @@ const App = () => {
       <section id="faq" className="py-24 bg-[#0d0c0a]">
         <div className="max-w-3xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-2xl md:text-3xl font-serif mb-4 text-amber-100 font-bold text-shadow-sm">よくある質問</h2>
-            <p className="text-[10px] tracking-[0.2em] text-gray-400 uppercase font-serif font-bold">Frequently Asked Questions</p>
+            <h2 className="text-2xl md:text-3xl font-serif mb-4 text-amber-100 font-bold">よくある質問</h2>
+            <p className="text-[10px] tracking-[0.2em] text-gray-400 uppercase font-serif font-bold">FAQ</p>
           </div>
           <div className="space-y-6">
             {[
-              { q: "片思いの相手の気持ちはどこまで具体的に分かりますか？", a: "タロットで今の彼の心の温度を読み、算命学で二人の宿命を重ねます。「今、彼はあなたをどう意識しているか」「次に何を求めているか」を、一つの物語として具体的にお伝えします。" },
-              { q: "無料相談はどのように行われますか？", a: "公式LINEを友だち追加後、チャット形式で鑑定を行います。源明が手動で鑑定を行い、物語形式のメッセージをお送りします。" }
+              { q: "片思いの相手の気持ちはどこまで具体的に分かりますか？", a: "タロットで今の彼の心の温度を読み、算命学で二人の宿命を重ねます。「今、彼はあなたをどう意識しているか」を具体的な物語としてお伝えします。" },
+              { q: "無料相談はどのように行われますか？", a: "公式LINEを友だち追加後、チャット形式で鑑定を行います。源明が直接読み解き、鑑定メッセージをお送りします。" }
             ].map((item, i) => (
-              <div key={i} className="bg-white/[0.04] p-6 border border-white/10 rounded-sm shadow-sm group hover:border-amber-500/30 transition">
-                <h3 className="text-sm md:text-base font-bold mb-3 flex items-start gap-3">
-                  <span className="text-amber-400 font-serif text-lg">Q.</span>
-                  <span className="leading-relaxed text-white">{item.q}</span>
-                </h3>
-                <div className="text-xs md:text-sm text-gray-300 leading-relaxed flex items-start gap-3 pl-1 border-t border-white/5 pt-3">
-                  <span className="text-amber-200 font-serif opacity-80 shrink-0 text-lg">A.</span>
-                  <p className="font-serif italic leading-[1.8]">{item.a}</p>
-                </div>
+              <div key={i} className="bg-white/[0.04] p-6 border border-white/10 rounded-sm group hover:border-amber-500/30 transition shadow-sm">
+                <h3 className="text-sm font-bold mb-3 flex items-start gap-3"><span className="text-amber-500 font-serif text-lg">Q.</span><span className="text-white">{item.q}</span></h3>
+                <div className="text-xs md:text-sm text-gray-300 leading-relaxed flex items-start gap-3 border-t border-white/5 pt-3"><span className="text-amber-200 font-serif opacity-70 shrink-0">A.</span><p className="font-serif italic">{item.a}</p></div>
               </div>
             ))}
           </div>
@@ -335,72 +304,61 @@ const App = () => {
                 <span className="text-sm text-gray-400 line-through font-normal">（通常 ￥5,500）</span>
               </div>
             </div>
-            <p className="text-gray-300 text-sm md:text-base font-serif leading-relaxed max-w-sm mx-auto italic relative z-10 text-shadow-sm">
-                算命学と色譜による基礎鑑定と、<br className="hidden md:block"/>今のあなたへ向けたメッセージを公式LINEで届けます。
-            </p>
+            <p className="text-gray-200 text-sm md:text-base font-serif leading-relaxed max-w-sm mx-auto italic relative z-10 text-shadow-sm">算命学と色譜による基礎鑑定と、今のあなたへ向けたメッセージを公式LINEで届けます。</p>
             <div className="space-y-4 relative z-10">
-                <a 
-                  href={BOOKING_URL} 
-                  rel="noopener noreferrer"
-                  className="group block w-full bg-[#06C755] text-white font-bold py-6 rounded-full text-xl shadow-[0_15px_40px_rgba(6,199,85,0.4)] transition-all transform hover:scale-[1.02] active:scale-95"
-                >
+                <a href={BOOKING_URL} rel="noopener noreferrer" className="group block w-full bg-[#06C755] text-white font-bold py-6 rounded-full text-xl shadow-[0_15px_40px_rgba(6,199,85,0.4)] transition-all transform hover:scale-[1.02] active:scale-95">
                   <MessageCircle size={28} className="inline-block mr-2 fill-current mb-1" />
                   無料鑑定の結果を受け取る
                   <ChevronRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" />
                 </a>
                 <p className="text-[11px] text-gray-300 tracking-[0.1em] font-bold">友だち追加後、チャットからすぐに開始できます</p>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-8 text-[11px] text-gray-400 uppercase tracking-[0.2em] relative z-10 font-serif font-bold">
-              <span className="flex items-center gap-2"><Shield size={14} className="text-amber-500"/> Privacy Protected</span>
-              <span className="flex items-center gap-2"><PenTool size={14} className="text-amber-500"/> Awarded Author</span>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Disclaimers & Evidence */}
-      <section className="py-16 bg-black/80 px-4 border-t border-white/10">
-        <div className="max-w-4xl mx-auto text-[13px] md:text-[14px] text-gray-200 space-y-6 leading-relaxed font-serif">
+      {/* 【視認性改善】Disclaimers & Evidence */}
+      <section className="py-16 bg-black px-4 border-t border-white/10">
+        <div className="max-w-4xl mx-auto text-[13px] md:text-[14px] text-gray-300 space-y-6 leading-relaxed font-serif">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-l-4 border-amber-500/60 pl-6 py-2 bg-white/[0.03] rounded-r-lg shadow-inner">
-            <span className="font-bold text-white tracking-wider">※1 アルファポリス 第15回ファンタジー小説大賞 結果発表ページにて、奨励賞として掲載（最終順位23位）</span>
-            <a 
-              href={AWARD_URL} 
-              target="_blank" 
-              rel="noopener noreferrer nofollow" 
-              aria-label="アルファポリス公式結果発表ページを新しいタブで開く"
-              className="text-amber-400 flex items-center gap-1 hover:text-white font-bold underline transition-colors bg-amber-500/10 px-2 py-1 rounded"
-            >
-              [公式発表を確認] <ExternalLink size={12} />
-            </a>
+            <span className="font-bold text-white tracking-wider">※1 アルファポリス 第15回ファンタジー小説大賞 結果発表ページにて、奨励賞として掲載</span>
+            <span className="text-gray-400 text-xs">（受賞作：『神様と呼ばれた医師の異世界転生物語』・村雨勇・最終順位23位）</span>
+            <a href={AWARD_URL} target="_blank" rel="noopener noreferrer nofollow" aria-label="アルファポリス公式結果発表ページを新しいタブで開く" className="text-amber-400 flex items-center gap-1 hover:text-white font-bold underline transition-colors bg-amber-500/10 px-2 py-1 rounded">[公式発表を確認] <ExternalLink size={12} /></a>
           </div>
-          <p className="opacity-100 font-bold border-b border-white/5 pb-2">※本サービスは占いおよび物語制作サービスです。将来の出来事を100%保証するものではありません。医療、法律等の専門的な助言は各専門家へご相談ください。</p>
-          <p className="opacity-90 leading-loose text-gray-300">※ご提供する内容は、占術および物語表現による解釈であり、感じ方・受け取り方には個人差があります。特定の効果を約束するものではありません。</p>
+          <p className="opacity-100 font-bold border-b border-white/5 pb-2 text-gray-200">※本サービスは占いおよび物語制作サービスです。将来の出来事を100%保証するものではありません。</p>
+          <p className="opacity-90 leading-loose text-gray-400 italic">※ご提供する内容は、占術および物語表現による解釈であり、受け取り方には個人差があります。</p>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* 【制作】Footer - 法的ページへの導線（モーダル起動） */}
       <footer className="py-16 border-t border-white/10 px-4 bg-black">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12 text-gray-200 text-[12px] tracking-[0.2em] font-bold">
-          <div className="font-serif text-amber-200 text-xl tracking-[0.2em] font-bold uppercase underline decoration-amber-500/40 underline-offset-8">源明 | Storyteller</div>
+          <div className="font-serif text-amber-200 text-2xl tracking-[0.2em] font-bold uppercase underline decoration-amber-500/40 underline-offset-8">源明 | Storyteller</div>
           <div className="flex flex-wrap justify-center gap-10">
-            <a href="https://example.com/terms" className="text-white hover:text-amber-200 transition underline decoration-white/40 underline-offset-4 font-bold">利用規約</a>
-            <a href="https://example.com/privacy" className="text-white hover:text-amber-200 transition underline decoration-white/40 underline-offset-4 font-bold">個人情報保護方針</a>
-            <a href="https://example.com/law" className="text-white hover:text-amber-200 transition underline decoration-white/40 underline-offset-4 font-bold">特定商取引法表記</a>
+            <button onClick={() => setActiveModal('terms')} className="text-white hover:text-amber-200 transition underline decoration-white/40 underline-offset-4">利用規約</button>
+            <button onClick={() => setActiveModal('privacy')} className="text-white hover:text-amber-200 transition underline decoration-white/40 underline-offset-4">個人情報保護方針</button>
+            <button onClick={() => setActiveModal('law')} className="text-white hover:text-amber-200 transition underline decoration-white/40 underline-offset-4">特定商取引法表記</button>
           </div>
-          <p className="text-gray-400 font-normal">© 2024 Genmei / Kawahara Genmei.</p>
+          <p className="text-gray-400 font-normal">© 2024 Genmei / Kawahara Genmei. All Rights Reserved.</p>
         </div>
       </footer>
 
+      {/* 【制作】法的モーダル */}
+      {activeModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setActiveModal(null)}>
+          <div className="bg-[#1a1814] w-full max-w-2xl max-h-[80vh] overflow-y-auto border border-amber-900/40 p-8 md:p-12 rounded-lg shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <button className="absolute top-4 right-4 text-gray-500 hover:text-white transition" onClick={() => setActiveModal(null)}><X size={32} /></button>
+            <h3 className="text-2xl font-serif text-amber-200 mb-8 border-b border-white/10 pb-4">{legalContent[activeModal].title}</h3>
+            <div className="text-gray-300 text-sm leading-[2] whitespace-pre-wrap font-serif">{legalContent[activeModal].body}</div>
+            <div className="mt-12 text-center"><button onClick={() => setActiveModal(null)} className="text-amber-500 font-bold border border-amber-500 px-8 py-3 rounded-full hover:bg-amber-500 hover:text-black transition">閉じる</button></div>
+          </div>
+        </div>
+      )}
+
       {/* Smart Floating Sticky Button */}
       <div className={`fixed bottom-0 left-0 w-full p-4 z-[110] transition-all duration-700 ease-in-out transform ${showFloatingButton ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'}`}>
-        <a 
-            href={BOOKING_URL} 
-            rel="noopener noreferrer"
-            className="w-full bg-[#06C755] text-white font-bold py-5 rounded-full shadow-[0_-10px_50px_rgba(0,0,0,0.9),0_10px_30px_rgba(6,199,85,0.4)] flex items-center justify-center gap-2 text-lg active:scale-95 transition border border-white/10"
-        >
-            <MessageCircle size={24} className="fill-current" />
-            <span>無料で相手の本音を知る</span>
-            <ChevronRight size={20} />
+        <a href={BOOKING_URL} rel="noopener noreferrer" className="w-full bg-[#06C755] text-white font-bold py-5 rounded-full shadow-[0_-10px_50px_rgba(0,0,0,0.9),0_10px_30px_rgba(6,199,85,0.4)] flex items-center justify-center gap-2 text-lg active:scale-95 transition border border-white/10">
+          <MessageCircle size={24} className="fill-current" /><span>無料で相手の本音を知る</span><ChevronRight size={20} />
         </a>
       </div>
 
@@ -417,7 +375,7 @@ const App = () => {
         .animate-nebula-drift { animation: nebula-drift 40s ease-in-out infinite; }
         .animate-twinkle { animation: twinkle 4s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) { .animate-space-drift-slow, .animate-space-drift-medium, .animate-nebula-drift, .animate-twinkle { animation: none !important; } }
-        .animate-fade-in { animation: fade-in 1s ease-out forwards; }
+        .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .text-shadow-glow { text-shadow: 0 0 20px rgba(251, 191, 36, 0.4); }
         .text-shadow-sm { text-shadow: 0 1px 4px rgba(0, 0, 0, 1); }
